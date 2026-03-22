@@ -1,5 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+app.use(cors({
+  origin: 'https://urbandung-frontend.vercel.app/', // Ganti dengan link asli dari Vercel
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 const { PrismaClient, Prisma } = require('@prisma/client');
 
 const multer = require('multer');
