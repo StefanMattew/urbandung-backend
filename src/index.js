@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 app.use(cors({
-  origin: 'https://urbandung-frontend.vercel.app/', // Ganti dengan link asli dari Vercel
+  origin: 'https://urbandung-frontend.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
