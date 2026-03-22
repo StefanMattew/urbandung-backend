@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String   @default("123456")
+  role       String   @default("USER")
+  reviews    Review[]
+
+  ownedCafes Cafe[]   @relation("CafeOwner")
+  favoriteCafes Cafe[] @relation("UserFavorites")
+}
+model Cafe {
+  id           Int        @id @default(autoincrement())
+  name         String
+  description  String?
+  address      String
+  latitude     Float
+  longitude    Float
+  priceRange   String     @default("Rp 20.000 - Rp 50.000")
+  imageUrl     String?    
+  gallery      String[]   @default([]) 
+  is24Hours    Boolean    @default(false)
+  operationalHours Json?
+
+  isTaxInc     Boolean    @default(false) 
+  viewType     String?    
+  purpose      String[]    
+  facilities   String[]   @default([])
+  popularityScore  Int      @default(0)
+
+  ownerId      Int?
+  owner        User?      @relation("CafeOwner", fields: [ownerId], references: [id])
+
+  crowdStatus      String   @default("normal")
+  favoritedBy User[] @relation("UserFavorites")
+  reviews      Review[]
+  menus        Menu[]     
+  menuItems    MenuItem[] 
+  
+}
+
+model MenuItem {
+  id          Int     @id @default(autoincrement())
+  name        String  
+  price       Int     
+  cafeId      Int
+  cafe        Cafe    @relation(fields: [cafeId], references: [id])
+}
+
+model Menu {
+  id       Int    @id @default(autoincrement())
+  fileUrl  String 
+  fileType String @default("IMAGE") 
+  cafeId   Int
+  cafe     Cafe   @relation(fields: [cafeId], references: [id])
+}
+
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int      
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+
+  userId    Int
+  cafeId    Int
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe      Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+}
