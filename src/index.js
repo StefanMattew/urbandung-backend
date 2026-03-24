@@ -17,19 +17,41 @@ app.use(cors({
 app.use(express.json());
 
 // --- UPLOAD CONFIG ---
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-app.use('/uploads', express.static(uploadDir));
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'))
+// --- CONFIG CLOUDINARY ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'urbandung_photos', // Folder otomatis di Cloudinary
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+    transformation: [{ width: 800, height: 600, crop: 'limit' }] // Otomatis ngecilin foto biar hemat storage
+  },
+});
+
 const upload = multer({ storage });
 
+// --- UPDATE ROUTE UPLOAD ---
 app.post('/api/upload', upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "Gagal upload" });
-  res.json({ filename: req.file.filename, url: `/uploads/${req.file.filename}` });
+  try {
+    if (!req.file) return res.status(400).json({ error: "Gagal upload ke Cloudinary" });
+    
+    // Link yang dikembalikan Cloudinary sudah HTTPS dan permanen!
+    res.json({ 
+      url: req.file.path, 
+      filename: req.file.filename 
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Terjadi kesalahan saat upload" });
+  }
 });
 
 app.get('/api/cafes', async (req, res) => {
