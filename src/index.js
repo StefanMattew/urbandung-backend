@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 // --- MIDDLEWARE ---
 app.use(cors({
-  origin: ['https://urbandung-frontend.vercel.app', 'http://localhost:3000'], // Tambah localhost frontend buat testing
+  origin: ['https://urbandung.vercel.app', 'http://localhost:3000'], // Tambah localhost frontend buat testing
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Tambah PATCH karena kamu pakai di bawah
   credentials: true
 }));
