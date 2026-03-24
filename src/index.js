@@ -52,34 +52,30 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.status(500).json({ error: "Terjadi kesalahan saat upload" });
   }
 });
-
 app.get('/api/cafes', async (req, res) => {
-  const userLat = parseFloat(req.query.lat) || -6.8915;
-  const userLng = parseFloat(req.query.lng) || 107.6107;
-  const radiusMeters = (parseFloat(req.query.radius) || 5) * 1000;
-  const is24Hours = req.query.is24Hours === 'true';
-  const purpose = req.query.purpose; 
-
   try {
-    const cafes = await prisma.$queryRaw`
-      SELECT 
-        id, name, description, address, latitude, longitude, 
-        "priceRange", "imageUrl", "is24Hours", "isTaxInc", 
-        "purpose", "facilities", "viewType", "ownerId", "operationalHours", "popularityScore", "crowdStatus",
-        (SELECT COALESCE(AVG(rating), 0) FROM "Review" WHERE "Review"."cafeId" = "Cafe".id) AS "avgRating",
-        ST_DistanceSphere(ST_MakePoint(longitude, latitude), ST_MakePoint(${userLng}, ${userLat})) as distance
-      FROM "Cafe"
-      WHERE ST_DistanceSphere(ST_MakePoint(longitude, latitude), ST_MakePoint(${userLng}, ${userLat})) <= ${radiusMeters}
-      ${is24Hours ? Prisma.sql`AND "is24Hours" = true` : Prisma.empty}
-      ${purpose ? Prisma.sql`AND ${purpose} = ANY("purpose")` : Prisma.empty}
-      ORDER BY distance ASC;
-    `;
+    // Kita pakai fungsi standar Prisma yang aman (Bypass PostGIS sementara)
+    const cafes = await prisma.cafe.findMany({
+      include: {
+        reviews: true // Ambil review sekalian untuk hitung rating
+      }
+    });
     
-    const serializedCafes = cafes.map(cafe => ({ 
-      ...cafe, 
-      distance: Number(cafe.distance),
-      avgRating: Number(cafe.avgRating)
-    }));
+    // Format datanya agar sesuai dengan yang diminta Frontend
+    const serializedCafes = cafes.map(cafe => {
+      const totalReviews = cafe.reviews.length;
+      const avgRating = totalReviews > 0 
+        ? cafe.reviews.reduce((acc, rev) => acc + rev.rating, 0) / totalReviews 
+        : 0;
+      
+      const { reviews, ...cafeData } = cafe; // Buang array reviews biar rapi
+      
+      return { 
+        ...cafeData, 
+        distance: 0, // Set jarak 0 sementara karena PostGIS kita matikan
+        avgRating: Number(avgRating.toFixed(1))
+      };
+    });
     
     res.json(serializedCafes);
   } catch (error) { 
@@ -87,7 +83,6 @@ app.get('/api/cafes', async (req, res) => {
     res.status(500).json({ error: "Gagal memuat data kafe" }); 
   }
 });
-
 app.get('/api/cafes/:id', async (req, res) => {
   try {
     const cafe = await prisma.cafe.findUnique({
