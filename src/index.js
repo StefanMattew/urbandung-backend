@@ -1,25 +1,24 @@
 const express = require('express');
 const cors = require('cors');
-app.use(cors({
-  origin: 'https://urbandung-frontend.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
 const { PrismaClient, Prisma } = require('@prisma/client');
-
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const app = express();
+const app = express(); // Cukup satu kali di sini
 const prisma = new PrismaClient();
 
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-
-app.use(cors());
+// --- MIDDLEWARE ---
+app.use(cors({
+  origin: ['https://urbandung-frontend.vercel.app', 'http://localhost:3000'], // Tambah localhost frontend buat testing
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Tambah PATCH karena kamu pakai di bawah
+  credentials: true
+}));
 app.use(express.json());
 
+// --- UPLOAD CONFIG ---
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
 
 const storage = multer.diskStorage({
@@ -30,7 +29,7 @@ const upload = multer({ storage });
 
 app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Gagal upload" });
-  res.json({ url: `http://localhost:5000/uploads/${req.file.filename}` });
+  res.json({ filename: req.file.filename, url: `/uploads/${req.file.filename}` });
 });
 
 app.get('/api/cafes', async (req, res) => {
