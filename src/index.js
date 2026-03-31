@@ -464,28 +464,39 @@ app.get('/api/owner/kuliners/:ownerId', async (req, res) => {
   }
 });
 
-
 app.post('/api/kuliners', async (req, res) => {
   try {
     const data = req.body;
+
+
+    if (data.latitude) data.latitude = parseFloat(data.latitude);
+    if (data.longitude) data.longitude = parseFloat(data.longitude);
+
     const newKuliner = await prisma.kuliner.create({ data });
     res.status(201).json(newKuliner);
   } catch (error) {
-    res.status(500).json({ error: "Gagal menyimpan kuliner baru" });
+
+    console.error("🔥 Error Detail POST Kuliner:", error); 
+    res.status(500).json({ error: "Gagal menyimpan kuliner baru", detail: error.message });
   }
 });
-
 
 app.patch('/api/kuliners/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    const data = req.body;
+
+    if (data.latitude) data.latitude = parseFloat(data.latitude);
+    if (data.longitude) data.longitude = parseFloat(data.longitude);
+
     const updatedKuliner = await prisma.kuliner.update({
       where: { id },
-      data: req.body
+      data: data
     });
     res.json(updatedKuliner);
   } catch (error) {
-    res.status(500).json({ error: "Gagal mengupdate kuliner" });
+    console.error("🔥 Error Detail PATCH Kuliner:", error);
+    res.status(500).json({ error: "Gagal mengupdate kuliner", detail: error.message });
   }
 });
 

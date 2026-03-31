@@ -39,12 +39,13 @@ model Cafe {
 
   ownerId      Int?
   owner        User?      @relation("CafeOwner", fields: [ownerId], references: [id])
-
+  deliveryLinks    Json?
   crowdStatus      String   @default("normal")
   favoritedBy User[] @relation("UserFavorites")
   reviews      Review[]
   menus        Menu[]     
   menuItems    MenuItem[] 
+  paymentMethod  String  @default("Cashless dan Cash")
   
 }
 
@@ -93,12 +94,15 @@ model Kuliner {
   diningType       Json?    // ['Dine-in', 'Takeaway', 'Lesehan']
   purpose          Json?    // ['Makan Keluarga', 'Sarapan']
   facilities       Json?    // ['VIP Room', 'High Chair', 'Parkir Luas']
+  deliveryLinks    Json?
   operationalHours Json?
   is24Hours        Boolean  @default(false)
   avgRating        Float    @default(0)
   crowdStatus      String   @default("normal")
   menuItems        Json?    // Menu makanan & harga
+  paymentMethod  String  @default("Cashless dan Cash")
   ownerId          Int      // Relasi ke tabel User/Owner
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  
 }
