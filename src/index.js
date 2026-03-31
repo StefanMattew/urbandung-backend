@@ -4,23 +4,23 @@ const { PrismaClient, Prisma } = require('@prisma/client');
 const path = require('path');
 const fs = require('fs');
 
-const app = express(); // Cukup satu kali di sini
+const app = express(); 
 const prisma = new PrismaClient();
 
 // --- MIDDLEWARE ---
 app.use(cors({
-  origin: ['https://urbandung.vercel.app', 'http://localhost:3000'], // Tambah localhost frontend buat testing
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Tambah PATCH karena kamu pakai di bawah
+  origin: ['https://urbandung.vercel.app', 'http://localhost:3000'], 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], 
   credentials: true
 }));
 app.use(express.json());
 
-// --- UPLOAD CONFIG ---
+
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
-// --- CONFIG CLOUDINARY ---
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -30,20 +30,20 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'urbandung_photos', // Folder otomatis di Cloudinary
+    folder: 'urbandung_photos', 
     allowed_formats: ['jpg', 'png', 'jpeg'],
-    transformation: [{ width: 800, height: 600, crop: 'limit' }] // Otomatis ngecilin foto biar hemat storage
+    transformation: [{ width: 800, height: 600, crop: 'limit' }] 
   },
 });
 
 const upload = multer({ storage });
 
-// --- UPDATE ROUTE UPLOAD ---
+
 app.post('/api/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Gagal upload ke Cloudinary" });
     
-    // Link yang dikembalikan Cloudinary sudah HTTPS dan permanen!
+  
     res.json({ 
       url: req.file.path, 
       filename: req.file.filename 
@@ -54,25 +54,25 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 });
 app.get('/api/cafes', async (req, res) => {
   try {
-    // Kita pakai fungsi standar Prisma yang aman (Bypass PostGIS sementara)
+
     const cafes = await prisma.cafe.findMany({
       include: {
-        reviews: true // Ambil review sekalian untuk hitung rating
+        reviews: true 
       }
     });
     
-    // Format datanya agar sesuai dengan yang diminta Frontend
+   
     const serializedCafes = cafes.map(cafe => {
       const totalReviews = cafe.reviews.length;
       const avgRating = totalReviews > 0 
         ? cafe.reviews.reduce((acc, rev) => acc + rev.rating, 0) / totalReviews 
         : 0;
       
-      const { reviews, ...cafeData } = cafe; // Buang array reviews biar rapi
+      const { reviews, ...cafeData } = cafe; 
       
       return { 
         ...cafeData, 
-        distance: 0, // Set jarak 0 sementara karena PostGIS kita matikan
+        distance: 0, 
         avgRating: Number(avgRating.toFixed(1))
       };
     });
@@ -489,7 +489,7 @@ app.patch('/api/kuliners/:id', async (req, res) => {
   }
 });
 
-// 5. Hapus Kuliner (DELETE)
+
 app.delete('/api/kuliners/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -499,6 +499,42 @@ app.delete('/api/kuliners/:id', async (req, res) => {
     res.status(500).json({ error: "Gagal menghapus kuliner" });
   }
 });
+app.get('/api/admin/kuliners', async (req, res) => {
+  try {
+    const kuliners = await prisma.kuliner.findMany({
+      include: { owner: true },
+      orderBy: { id: 'desc' }
+    });
+    res.json(kuliners);
+  } catch (error) { res.status(500).json({ error: "Gagal memuat semua kuliner" }); }
+});
+app.put('/api/admin/kuliners/:id/transfer', async (req, res) => {
+  try {
+    const { newOwnerId } = req.body;
+    const updatedKuliner = await prisma.kuliner.update({
+      where: { id: parseInt(req.params.id) },
+      data: { ownerId: parseInt(newOwnerId) }
+    });
+    res.json(updatedKuliner);
+  } catch (error) { 
+    res.status(500).json({ error: "Gagal memindah tangankan kuliner" }); 
+  }
+});
+app.patch('/api/kuliners/:id/score', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { popularityScore } = req.body;
+    const updatedKuliner = await prisma.kuliner.update({
+      where: { id: parseInt(id) },
+      data: { popularityScore: parseInt(popularityScore) || 0 }
+    });
+    res.json(updatedKuliner);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Gagal mengupdate skor popularitas" });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend run di port ${PORT}`));
