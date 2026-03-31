@@ -77,3 +77,28 @@ model Review {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cafe      Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
 }
+
+model Kuliner {
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String?
+  address          String
+  latitude         Float
+  longitude        Float
+  imageUrl         String?
+  gallery          Json?    // Menyimpan array link foto galeri
+  priceRange       String?
+  foodCategory     Json?    // ['Sunda', 'Western', 'Street Food']
+  isHalal          Boolean  @default(true) // Wajib untuk kuliner
+  diningType       Json?    // ['Dine-in', 'Takeaway', 'Lesehan']
+  purpose          Json?    // ['Makan Keluarga', 'Sarapan']
+  facilities       Json?    // ['VIP Room', 'High Chair', 'Parkir Luas']
+  operationalHours Json?
+  is24Hours        Boolean  @default(false)
+  avgRating        Float    @default(0)
+  crowdStatus      String   @default("normal")
+  menuItems        Json?    // Menu makanan & harga
+  ownerId          Int      // Relasi ke tabel User/Owner
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

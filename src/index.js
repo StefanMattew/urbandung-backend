@@ -440,6 +440,65 @@ app.patch('/api/cafes/:id', async (req, res) => {
     res.status(500).json({ error: "Terjadi kesalahan pada server saat update status" });
   }
 });
+// ==========================================
+// KULINER
+// ==========================================
+
+app.get('/api/kuliners', async (req, res) => {
+  try {
+    const kuliners = await prisma.kuliner.findMany(); 
+    res.json(kuliners);
+  } catch (error) {
+    res.status(500).json({ error: "Gagal mengambil data kuliner" });
+  }
+});
+
+
+app.get('/api/owner/kuliners/:ownerId', async (req, res) => {
+  try {
+    const ownerId = parseInt(req.params.ownerId);
+    const myKuliners = await prisma.kuliner.findMany({ where: { ownerId } });
+    res.json(myKuliners);
+  } catch (error) {
+    res.status(500).json({ error: "Gagal mengambil data kuliner owner" });
+  }
+});
+
+
+app.post('/api/kuliners', async (req, res) => {
+  try {
+    const data = req.body;
+    const newKuliner = await prisma.kuliner.create({ data });
+    res.status(201).json(newKuliner);
+  } catch (error) {
+    res.status(500).json({ error: "Gagal menyimpan kuliner baru" });
+  }
+});
+
+
+app.patch('/api/kuliners/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const updatedKuliner = await prisma.kuliner.update({
+      where: { id },
+      data: req.body
+    });
+    res.json(updatedKuliner);
+  } catch (error) {
+    res.status(500).json({ error: "Gagal mengupdate kuliner" });
+  }
+});
+
+// 5. Hapus Kuliner (DELETE)
+app.delete('/api/kuliners/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await prisma.kuliner.delete({ where: { id } });
+    res.json({ message: "Kuliner berhasil dihapus" });
+  } catch (error) {
+    res.status(500).json({ error: "Gagal menghapus kuliner" });
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend run di port ${PORT}`));
