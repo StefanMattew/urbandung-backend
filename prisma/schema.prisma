@@ -103,6 +103,7 @@ model Kuliner {
   menuItems        Json?    // Menu makanan & harga
   acceptsCash     Boolean @default(true)
   acceptsCashless Boolean @default(true)
+  isTaxInc     Boolean    @default(false) 
   ownerId          Int      // Relasi ke tabel User/Owner
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
